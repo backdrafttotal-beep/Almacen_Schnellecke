@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Almacén Schnellecke</title>
+<style>
+  :root{
+    --bg:#14171c;
+    --panel:#1c2129;
+    --panel-2:#232a34;
+    --line:#323a46;
+    --amber:#e8a23d;
+    --amber-dim:#7a5a26;
+    --text:#eef1f5;
+    --text-dim:#98a3b3;
+    --green:#4caf7d;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{padding-bottom:96px;}
+
+  header{
+    position:sticky;top:0;z-index:20;
+    background:linear-gradient(180deg,#171b21,#14171c 90%);
+    border-bottom:2px solid var(--amber-dim);
+    padding:14px 16px 12px;
+  }
+  header h1{
+    margin:0 0 2px;
+    font-size:17px;
+    letter-spacing:.3px;
+    font-weight:700;
+  }
+  header .sub{font-size:12px;color:var(--text-dim);}
+  .repeating-tick{
+    position:absolute;inset:0;pointer-events:none;opacity:.06;
+    background-image:repeating-linear-gradient(135deg,var(--amber) 0 2px, transparent 2px 14px);
+  }
+
+  .meta{
+    display:flex;gap:8px;padding:12px 16px 4px;flex-wrap:wrap;
+  }
+  .meta label{
+    flex:1;min-width:130px;
+    display:flex;flex-direction:column;gap:4px;
+    font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;
+  }
+  .meta input{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:9px 10px;font-size:14px;
+  }
+  .meta input:focus{outline:none;border-color:var(--amber);}
+
+  .matricula-box{
+    display:flex;align-items:center;gap:10px;padding:12px 16px 4px;flex-wrap:wrap;
+  }
+  .matricula-box .matricula-label{
+    font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;
+    flex:none;
+  }
+  .matricula-box .matricula-controls{
+    display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap;min-width:0;
+  }
+  .matricula-box .matricula-select{
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    color:var(--text);font-size:13px;padding:9px 10px;flex:1;min-width:150px;max-width:220px;
+  }
+  .matricula-box .matricula-select:focus{outline:none;border-color:var(--amber);}
+  .matricula-box .matricula-manual-input{
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    color:var(--text);font-size:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    padding:9px 12px;flex:1;min-width:160px;text-transform:uppercase;
+  }
+  .matricula-box .matricula-manual-input:focus{outline:none;border-color:var(--amber);}
+
+  .mic-group-btn{
+    flex:none;background:#2a6f4f;border:none;border-radius:8px;color:#eafff2;
+    font-size:15px;padding:7px 10px;margin:0 8px;
+  }
+  .mic-group-btn.listening{background:var(--red,#ff5a5a);animation:pulseMicSearch 1s infinite;}
+  @keyframes pulseMicSearch{0%,100%{opacity:1;}50%{opacity:.6;}}
+
+  /* ---------- REGISTROS ---------- */
+  #registrosView{display:none;padding:8px 10px 0;}
+  .registros-datebar{padding:4px 6px 12px;}
+  .registros-datebar label{
+    display:flex;flex-direction:column;gap:4px;
+    font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;
+  }
+  .registros-datebar input{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:9px 10px;font-size:14px;max-width:220px;
+  }
+  .registros-datebar input:focus{outline:none;border-color:var(--amber);}
+  .reg-empty{color:var(--text-dim);font-size:13px;padding:20px 8px;text-align:center;}
+  .reg-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    margin:0 4px 12px;overflow:hidden;
+  }
+  .reg-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:10px 12px;background:var(--panel-2);border-bottom:1px solid var(--line);
+  }
+  .reg-head .reg-tag{
+    font-size:10px;font-weight:700;letter-spacing:.3px;padding:3px 8px;border-radius:20px;
+  }
+  .reg-tag.carga{background:rgba(232,162,61,.18);color:var(--amber);}
+  .reg-tag.descarga{background:rgba(79,179,255,.18);color:#4fb3ff;}
+  .reg-head .reg-plate{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;
+    font-size:14px;letter-spacing:.5px;
+  }
+  .reg-head .reg-time{font-size:11px;color:var(--text-dim);}
+  .reg-del{background:transparent;border:none;color:var(--text-dim);font-size:15px;padding:4px 6px;}
+  .reg-body{padding:8px 12px 10px;}
+  .reg-item{
+    display:flex;justify-content:space-between;gap:8px;font-size:12.5px;
+    padding:4px 0;border-bottom:1px dashed var(--line);
+  }
+  .reg-item:last-child{border-bottom:none;}
+  .reg-item .reg-item-name{color:var(--text-dim);}
+  .reg-item .reg-item-name b{color:var(--text);font-weight:600;}
+  .reg-provider{
+    font-size:11.5px;font-weight:700;color:var(--amber);letter-spacing:.2px;
+    padding:8px 0 3px;
+  }
+  .reg-provider:first-child{padding-top:0;}
+  .reg-item .reg-item-qty{color:var(--green);font-weight:700;}
+  .reg-total{
+    display:flex;justify-content:space-between;padding:8px 12px;
+    border-top:1px solid var(--line);font-size:13px;font-weight:700;color:var(--amber);
+  }
+
+  main{padding:8px 10px 0;}
+
+  .tabbar{
+    display:flex;gap:6px;padding:12px 12px 0;
+  }
+  .tab-btn{
+    flex:1;border:1px solid var(--line);background:var(--panel);
+    color:var(--text-dim);font-size:10.5px;font-weight:700;letter-spacing:.2px;
+    border-radius:9px;padding:10px 4px;line-height:1.25;
+  }
+  .tab-btn.active{
+    background:var(--amber-dim);color:var(--text);border-color:var(--amber);
+  }
+
+  .group{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    margin:10px 4px;overflow:hidden;
+  }
+  .group-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:10px 12px;background:var(--panel-2);
+    border-bottom:1px solid var(--line);
+  }
+  .group-head .name{
+    font-weight:700;font-size:14px;letter-spacing:.3px;
+  }
+  .group-head .code{
+    font-size:11px;color:var(--amber);font-variant-numeric:tabular-nums;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .group-head .subtotal{
+    font-size:12px;color:var(--text-dim);white-space:nowrap;
+  }
+  .group-head .subtotal b{color:var(--green);font-size:13px;}
+
+  /* ancho fijo por columna (en px) -> permite tabla más ancha que la pantalla
+     con scroll horizontal, y evita que el texto se solape */
+  :root{ --w-cont:88px; --w-den:160px; --w-cant:76px; }
+
+  .table-wrap{
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    position:relative;
+  }
+  .table-wrap::after{
+    content:"";position:sticky;display:block;left:100%;top:0;
+    width:1px;height:0;
+  }
+  .scroll-hint{
+    font-size:10px;color:var(--text-dim);padding:2px 12px 8px;
+    display:flex;align-items:center;gap:4px;
+  }
+
+  table{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;min-width:100%;}
+  col.col-cont{width:var(--w-cont);}
+  col.col-den{width:var(--w-den);}
+  col.col-cant{width:var(--w-cant);}
+
+  thead th{
+    font-size:9.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;
+    font-weight:600;padding:5px 3px;text-align:center;border-bottom:1px solid var(--line);
+    background:var(--panel);white-space:nowrap;
+  }
+  thead th.col-cont{text-align:left;padding-left:10px;white-space:normal;line-height:1.15;}
+  thead th.col-den{text-align:left;}
+
+  tbody td{padding:6px 3px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+
+  /* columnas Cont. y Denominación con ancho fijo, se desplazan junto con el resto de la tabla */
+  td.cont{
+    padding-left:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12px;color:var(--amber);line-height:1.3;
+    white-space:normal;word-break:break-word;
+  }
+  td.den{font-size:12.5px;line-height:1.3;padding-right:6px;white-space:normal;word-break:break-word;}
+  td.den .refline{
+    display:block;margin-top:2px;font-size:10px;color:var(--text-dim);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  td.den .refline.refline-hl{
+    display:block;width:fit-content;color:#5ec8ff;font-weight:800;
+    background:rgba(94,200,255,.14);border:1px solid rgba(94,200,255,.4);
+    padding:1px 6px;border-radius:5px;margin-top:3px;
+  }
+
+  td.cant input{
+    width:100%;text-align:center;background:var(--bg);
+    border:1px solid var(--line);border-radius:7px;color:var(--amber);
+    font-size:16px;font-weight:700;padding:10px 0;
+  }
+  td.cant input:focus{outline:none;border-color:var(--amber);background:#1a1e25;}
+  td.cant input::-webkit-outer-spin-button,td.cant input::-webkit-inner-spin-button{margin:0;}
+
+  footer{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    background:linear-gradient(0deg,#14171c 70%, rgba(20,23,28,0));
+    padding:10px 12px 14px;
+  }
+  .footer-inner{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;display:flex;align-items:center;gap:10px;
+    box-shadow:0 6px 24px rgba(0,0,0,.4);
+  }
+  .grand-total{flex:1;}
+  .grand-total .label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;}
+  .grand-total .value{font-size:20px;font-weight:800;color:var(--amber);line-height:1.15;}
+  .btn{
+    border:none;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:700;
+    display:flex;align-items:center;gap:6px;white-space:nowrap;
+  }
+  .btn-share{background:#25D366;color:#0b1a10;}
+  .btn-text{background:transparent;color:var(--text-dim);border:1px solid var(--line);
+    padding:11px 12px;font-size:14px;}
+  .btn-clear{background:transparent;color:var(--text-dim);border:1px solid var(--line);
+    padding:11px 12px;}
+  .btn:active{transform:scale(.96);}
+
+  .toast{
+    position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);
+    background:var(--panel-2);border:1px solid var(--amber-dim);color:var(--text);
+    padding:9px 16px;border-radius:20px;font-size:12.5px;
+    opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:40;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="repeating-tick"></div>
+  <h1>Almacén Schnellecke</h1>
+  <div class="sub" id="autosaveNote">Rellena por contenedor y matrícula de remolque · se guarda solo en este teléfono</div>
+</header>
+
+<div class="meta">
+  <label>Fecha
+    <input type="date" id="fecha">
+  </label>
+  <label>Turno / Nombre
+    <input type="text" id="turno" placeholder="Ej: Mañana - Juan">
+  </label>
+</div>
+
+<div class="tabbar" id="tabbar">
+  <button class="tab-btn" data-tab="carga">CARGA VACÍOS</button>
+  <button class="tab-btn" data-tab="descarga">MATERIAL DESCARGADO</button>
+  <button class="tab-btn" data-tab="registros">REGISTROS</button>
+</div>
+
+<div class="matricula-box" id="matriculaBox"></div>
+
+<div id="groupsWrap">
+  <main id="groups-carga"></main>
+  <main id="groups-descarga"></main>
+</div>
+
+<div id="registrosView">
+  <div class="registros-datebar">
+    <label>Fecha
+      <input type="date" id="registrosFecha">
+    </label>
+  </div>
+  <div id="registrosList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer id="footer">
+  <div class="footer-inner">
+    <div class="grand-total">
+      <div class="label">Total piezas</div>
+      <div class="value" id="grandTotal">0</div>
+    </div>
+    <button class="btn btn-clear" id="clearBtn" title="Vaciar todo">🗑</button>
+    <button class="btn btn-text" id="textBtn" title="Enviar solo como texto">Aa</button>
+    <button class="btn btn-share" id="shareBtn">📷 Compartir imagen</button>
+  </div>
+</footer>
+
+<script>
+// ---------- DATOS (extraídos de Referencias.xlsx) ----------
+const DATA_CARGA = [
+  { code: 3538250, name: "KWD", items: [
+    { ref: "2F0 803 091A", den: "Larguero anterior Izq", cont: 539473 },
+    { ref: "2F0 803 092A", den: "Larguero anterior Dch", cont: 539472 },
+    { ref: "2F0 803 301",  den: "Traviesa asiento",       cont: 539476 },
+    { ref: "2F0 813 146",  den: "Refuerzo",               cont: 539480 },
+    { ref: "2F0 805 115A", den: "Pasorrueda anterior Izq",cont: 539483 },
+    { ref: "2F0 805 116A", den: "Pasorrueda anterior Dch",cont: 539484 },
+  ]},
+  { code: 1573110, name: "GESTAMP", items: [
+    { ref: "2F0 804 451",   den: "Prolongación larguero",  cont: 539482 },
+    { ref: "2F0 813 114",   den: "Bombo",                  cont: 539481 },
+    { ref: "2FA 813 301",   den: "Faldón",                 cont: 540787 },
+    { ref: "3FA 802 483",   den: "Traviesa cortavientos",  cont: 540789 },
+    { ref: "2F0 803 501/2", den: "Larguero posterior",     cont: 539478 },
+    { ref: "2G7 813 301A",  den: "", cont: "533178" },
+    { ref: "2Q0 803 531B",  den: "", cont: "512610" },
+  ]},
+  { code: 533452, name: "MAGNA", items: [
+    { ref: "2F0 803 141",   den: "Pedalera", cont: 539485 },
+    { ref: "2F0 801 251/2", den: "Talonera", cont: 539474 },
+  ]},
+  { code: 590175, name: "ZONA FRANCA", items: [
+    { ref: "2F0 813 113", den: "Piso posterior", cont: 540258 },
+    { ref: "2F0 803 155", den: "Salpicadero",    cont: 540132 },
+    { ref: "2Q1 805 265", den: "", cont: "512587" },
+    { ref: "2Q2 805 265", den: "", cont: "512588" },
+    { ref: "2Q2 803 155", den: "", cont: "512584" },
+    { ref: "2Q1 803 155", den: "", cont: "512583" },
+    { ref: "2Q0 803 205 B", den: "", cont: "512585" },
+  ]},
+  { code: 590179, name: "SEAT MARTORELL", items: [
+    { ref: "2F0 805 265", den: "Caja de aguas", cont: 540133 },
+  ]},
+  { code: 525950, name: "MELEGHY", items: [
+    { ref: "2F0 813 759", den: "Placa refuerzo", cont: 539486 },
+    { ref: "2Q0 803 531A", den: "", cont: "512610" },
+    { ref: "2GM 802 483", den: "", cont: "70A519760" },
+  ]},
+  { code: 557570, name: "NEINSA", items: [
+    { ref: "2F0 803 296", den: "Túnel",         cont: 539477 },
+    { ref: "2F0 803 531", den: "Traviesa",      cont: 539479 },
+    { ref: "111 940",     den: "Contenedores",  cont: "111 940", showRef: false },
+    { ref: "539473",      den: "Contenedores",  cont: "539473",  showRef: false },
+    { ref: "2Q2 802 543", den: "", cont: "111902" },
+    { ref: "2F0 804 351", den: "", cont: "111940" },
+    { ref: "2F0 804 352", den: "", cont: "111940" },
+    { ref: "2F0 804 429", den: "", cont: "111902" },
+    { ref: "2F0 804 430", den: "", cont: "111902" },
+    { ref: "2F0 802 191", den: "", cont: "111940" },
+    { ref: "2F0 802 192", den: "", cont: "111940" },
+    { ref: "2F0 803 177", den: "", cont: "114903" },
+    { ref: "2F0 803 178", den: "", cont: "114903" },
+    { ref: "2F0 803 489", den: "", cont: "114903" },
+    { ref: "2F0 803 490", den: "", cont: "114903" },
+    { ref: "3FA 809 147", den: "", cont: "111902" },
+    { ref: "3FA 809 148", den: "", cont: "111902" },
+  ]},
+  { code: "", name: "AISA", items: [
+    { ref: "2Q0 802 225",  den: "", cont: "111970" },
+    { ref: "2Q0 802 226B", den: "", cont: "111970" },
+    { ref: "2Q0 802 951",  den: "", cont: "111940" },
+    { ref: "2Q0 802 952",  den: "", cont: "111940" },
+  ]},
+  { code: "", name: "ABRERA", items: [
+    { ref: "2Q0 803 144", den: "Pedalera", cont: "512609" },
+  ]},
+];
+
+const DATA_DESCARGA = [
+  { code: 3538250, name: "KWD", items: [
+    { ref: "2Q0 801 251 E", den: "Taloneras",    cont: "512613" },
+    { ref: "2Q0 803 561",   den: "Bananas Izq",  cont: "111 940" },
+    { ref: "2Q0 803 562",   den: "Bananas Dch",  cont: "111 940" },
+  ]},
+  { code: 1573110, name: "GESTAMP", items: [
+    { ref: "3FA 802 125", den: "", cont: "111 940" },
+    { ref: "3FA 802 126", den: "", cont: "111 940" },
+  ]},
+  { code: 557570, name: "NEINSA", sortBy: "ref", items: [
+    { ref: "2GM 813 301",   den: "", cont: "519759" },
+    { ref: "2Q0 802 225A",  den: "", cont: "519765" },
+    { ref: "2Q0 802 226C",  den: "", cont: "519754" },
+    { ref: "2Q0 813 113A",  den: "", cont: "519763" },
+    { ref: "2Q6 813 114",   den: "", cont: "533187" },
+    { ref: "2Q5 803 131",   den: "", cont: "533188" },
+    { ref: "2GM 805 495",   den: "", cont: "VWPAL/KLTS" },
+    { ref: "2Q0 802 951B",  den: "", cont: "111902" },
+    { ref: "2Q0 802 952B",  den: "", cont: "111902" },
+    { ref: "2Q0 805 077",   den: "", cont: "111902" },
+    { ref: "2Q0 805 078",   den: "", cont: "111902" },
+    { ref: "2Q1 802 543",   den: "", cont: "111902" },
+    { ref: "2Q2 802 543",   den: "", cont: "111902" },
+    { ref: "2F0 804 351",   den: "", cont: "111940" },
+    { ref: "2F0 804 352",   den: "", cont: "111940" },
+    { ref: "2F0 804 429",   den: "", cont: "111902" },
+    { ref: "2F0 804 430",   den: "", cont: "111902" },
+    { ref: "2Q0 802 225",   den: "", cont: "111970" },
+    { ref: "2Q0 802 226B",  den: "", cont: "111970" },
+    { ref: "2Q0 813 113",   den: "", cont: "512599" },
+    { ref: "2Q0 813 114E",  den: "", cont: "512598" },
+    { ref: "2Q0 802 951",   den: "", cont: "111940" },
+    { ref: "2Q0 802 952",   den: "", cont: "111940" },
+    { ref: "2F0 802 191",   den: "", cont: "111940" },
+    { ref: "2F0 802 192",   den: "", cont: "111940" },
+    { ref: "2F0 803 177",   den: "", cont: "114903" },
+    { ref: "2F0 803 178",   den: "", cont: "114903" },
+    { ref: "2F0 803 489",   den: "", cont: "114903" },
+    { ref: "2F0 803 490",   den: "", cont: "114903" },
+    { ref: "3FA 809 147",   den: "", cont: "111902" },
+    { ref: "3FA 809 148",   den: "", cont: "111902" },
+  ]},
+  { code: 590175, name: "ZONA FRANCA", items: [
+    { ref: "2F0 802 851", den: "", cont: "114 903" },
+    { ref: "2F0 802 852", den: "", cont: "114 903" },
+    { ref: "2F0 804 789", den: "", cont: "111 940" },
+    { ref: "2F0 804 790", den: "", cont: "111 940" },
+    { ref: "2F0 805 265", den: "", cont: "540 133" },
+    { ref: "2F0 805 277", den: "", cont: "114 903" },
+    { ref: "2F0 805 397", den: "", cont: "114 903" },
+    { ref: "2F0 805 398", den: "", cont: "114 903" },
+    { ref: "2F0 809 687", den: "", cont: "114 903" },
+    { ref: "2F0 809 688", den: "", cont: "114 903" },
+    { ref: "2Q1 805 265", den: "", cont: "512587" },
+    { ref: "2Q2 805 265", den: "", cont: "512588" },
+    { ref: "2Q1 803 155", den: "", cont: "512583" },
+    { ref: "2Q2 803 155", den: "", cont: "512584" },
+    { ref: "2Q0 803 205 B", den: "", cont: "512585" },
+  ]},
+  { code: 590179, name: "SEAT MARTORELL", items: [
+    { ref: "2F0 810 425", den: "Pasarr. Inter. Post.", cont: "111 940" },
+    { ref: "2F0 810 426", den: "Pasarr. Inter. Post.", cont: "111 940" },
+    { ref: "2F0 803 205", den: "Piso anterior", cont: "540 134" },
+  ]},
+  { code: "", name: "SODECIA", items: [
+    { ref: "2F0 868 741", den: "", cont: "111 902" },
+  ]},
+  { code: "20313", name: "INAPAL", items: [
+    { ref: "2F0 806 419", den: "", cont: "114903" },
+    { ref: "2F0 806 420", den: "", cont: "114903" },
+    { ref: "2F0 813 721", den: "", cont: "114903" },
+    { ref: "2F0 813 722", den: "", cont: "114903" },
+  ]},
+  { code: "20454", name: "JORDAN", items: [
+    { ref: "2F0 805 811", den: "", cont: "114903" },
+    { ref: "2F0 805 812", den: "", cont: "114903" },
+  ]},
+];
+
+// ---------- FUSIONAR CONTENEDORES REPETIDOS (dentro de un mismo proveedor) ----------
+// Si varias referencias comparten el mismo número de contenedor, se dejan
+// en una sola fila con denominación "Contenedores". Las que tienen un
+// contenedor único conservan su referencia y denominación tal cual.
+function dedupeByContainer(g){
+  const buckets = new Map();
+  g.items.forEach(it=>{
+    const key = String(it.cont || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const bucketKey = key || Symbol();
+    if(!buckets.has(bucketKey)) buckets.set(bucketKey, []);
+    buckets.get(bucketKey).push(it);
+  });
+  const newItems = [];
+  buckets.forEach(list=>{
+    if(list.length === 1){
+      newItems.push(list[0]);
+    }else{
+      // preferimos el formato de contenedor sin espacios internos si lo hay
+      const canonical = list.find(it=> !/\s/.test(String(it.cont))) || list[0];
+      newItems.push({ ref:String(canonical.cont), den:"Contenedores", cont:canonical.cont, showRef:false });
+    }
+  });
+  g.items = newItems;
+}
+["NEINSA", "AISA"].forEach(name=>{
+  const g = DATA_CARGA.find(x=> x.name === name);
+  if(g) dedupeByContainer(g);
+});
+
+// ---------- TRAER CATÁLOGO DE CARGA VACÍOS TAMBIÉN A MATERIAL DESCARGADO ----------
+// Cada proveedor de CARGA VACÍOS (con sus contenedores y denominaciones) se añade
+// también a MATERIAL DESCARGADO, creando el proveedor si no existía, y sin duplicar
+// referencias que ya estuvieran presentes en MATERIAL DESCARGADO.
+DATA_CARGA.forEach(cg=>{
+  let dg = DATA_DESCARGA.find(g=> g.name === cg.name);
+  if(!dg){
+    dg = { code: cg.code, name: cg.name, items: [] };
+    DATA_DESCARGA.push(dg);
+  }
+  cg.items.forEach(it=>{
+    if(!dg.items.some(x=> x.ref === it.ref)){
+      dg.items.push(Object.assign({}, it));
+    }
+  });
+});
+
+// En MATERIAL DESCARGADO, NEINSA no debe mostrar las filas genéricas
+// "Contenedores" que sí existen en CARGA VACÍOS (ahí no aportan información,
+// ya que el contenedor de descarga se identifica por su propia referencia).
+{
+  const neinsaDescarga = DATA_DESCARGA.find(g=> g.name === "NEINSA");
+  if(neinsaDescarga){
+    neinsaDescarga.items = neinsaDescarga.items.filter(it=> it.den !== "Contenedores");
+  }
+}
+
+// ---------- NORMALIZAR CONTENEDORES A 6 DÍGITOS SEGUIDOS ----------
+// Algunos contenedores venían con espacios ("111 940") o con texto delante
+// ("70A519760"). Los dejamos siempre como los últimos 6 dígitos, juntos.
+function normalizeContainerValue(cont){
+  if(cont === undefined || cont === null) return cont;
+  if(typeof cont === "number") return cont;
+  const digits = String(cont).replace(/[^0-9]/g, "");
+  if(digits.length === 0) return cont;          // sin dígitos (ej. "VWPAL/KLTS"): lo dejamos igual
+  if(digits.length > 6) return digits.slice(-6); // más de 6: nos quedamos con los 6 últimos
+  return digits;                                  // 6 o menos: solo lo dejamos junto
+}
+[DATA_CARGA, DATA_DESCARGA].forEach(dataset=>{
+  dataset.forEach(g=> g.items.forEach(it=>{ it.cont = normalizeContainerValue(it.cont); }));
+});
+
+// En MATERIAL DESCARGADO, todos los proveedores se ordenan igual que NEINSA:
+// por los 3 últimos dígitos de la REFERENCIA (no del contenedor).
+DATA_DESCARGA.forEach(g=> g.sortBy = "ref");
+
+// ---------- ORDEN DE REFERENCIAS POR CONTENEDOR ----------
+// Dentro de cada proveedor, ordenamos las referencias de menor a mayor
+// según los 3 últimos caracteres del número de contenedor (con o sin letra),
+// no por el número completo. Ej: 540473 va antes que 539474 porque 473 < 474.
+function contSortKey(cont){
+  const raw = String(cont == null ? "" : cont).trim();
+  const digits = raw.replace(/[^0-9]/g, "");
+  if(!digits) return { num:null, hasLetter:false, letter:"" };
+  const last3 = digits.slice(-3);
+  const letterMatch = raw.match(/([A-Za-z])\s*$/);
+  return { num: parseInt(last3, 10), hasLetter: !!letterMatch, letter: letterMatch ? letterMatch[1].toUpperCase() : "" };
+}
+function compareByContSuffix(a, b){
+  const ka = contSortKey(a.cont), kb = contSortKey(b.cont);
+  if(ka.num === null && kb.num === null) return 0;
+  if(ka.num === null) return 1;   // sin números: al final
+  if(kb.num === null) return -1;
+  if(ka.num !== kb.num) return ka.num - kb.num;
+  // mismo número: primero los que no tienen letra al final
+  if(ka.hasLetter !== kb.hasLetter) return ka.hasLetter ? 1 : -1;
+  // si ambos tienen letra, orden alfabético por esa letra
+  return ka.letter.localeCompare(kb.letter);
+}
+[DATA_CARGA, DATA_DESCARGA].forEach(dataset=>{
+  dataset.forEach(g=>{
+    const field = g.sortBy || "cont";
+    g.items.sort((a,b)=> compareByContSuffix({cont:a[field]}, {cont:b[field]}));
+  });
+});
+
+// En NEINSA (MATERIAL DESCARGADO), este es el orden completo y definitivo:
+// primero hasta la referencia que acaba en 301, luego 225/226, luego 2Q5 803 131,
+// y después agrupado por contenedor (111940, 111902, 114903) y el resto al final.
+{
+  const neinsaFullOrder = [
+    "2Q0 813 113", "2Q0 813 113A", "2Q6 813 114", "2Q0 813 114E",
+    "2Q0 802 225A", "2Q0 802 226C", "2GM 813 301",
+    "2Q0 802 225", "2Q0 802 226B",
+    "2Q5 803 131",
+    // contenedor 111940
+    "2F0 802 191", "2F0 802 192", "2F0 804 351", "2F0 804 352",
+    "2Q0 802 951", "2Q0 802 952",
+    // contenedor 111902
+    "2Q0 805 077", "2Q0 805 078", "3FA 809 147", "3FA 809 148",
+    "2F0 804 429", "2F0 804 430", "2Q1 802 543", "2Q2 802 543",
+    "2Q0 802 951B", "2Q0 802 952B",
+    // contenedor 114903
+    "2F0 803 177", "2F0 803 178", "2F0 803 489", "2F0 803 490",
+    // lo que queda
+    "2F0 803 296", "2GM 805 495", "2F0 803 531",
+  ];
+  const neinsaDescarga = DATA_DESCARGA.find(g=> g.name === "NEINSA");
+  if(neinsaDescarga){
+    const ordered = [];
+    neinsaFullOrder.forEach(ref=>{
+      const idx = neinsaDescarga.items.findIndex(it=> it.ref === ref);
+      if(idx !== -1) ordered.push(neinsaDescarga.items.splice(idx, 1)[0]);
+    });
+    // por si quedara alguna referencia no contemplada en la lista, la dejamos al final
+    neinsaDescarga.items = ordered.concat(neinsaDescarga.items);
+  }
+}
+
+// En KWD (MATERIAL DESCARGADO), estas referencias van siempre arriba del
+// todo, en este orden exacto; el resto sigue debajo con el orden habitual.
+{
+  const kwdOrderPriority = [
+    "2Q0 801 251 E", "2Q0 803 561", "2Q0 803 562",
+    "2F0 803 091A", "2F0 803 092A", "2F0 805 116A", "2F0 805 115A",
+  ];
+  const kwdDescarga = DATA_DESCARGA.find(g=> g.name === "KWD");
+  if(kwdDescarga){
+    const top = [];
+    kwdOrderPriority.forEach(ref=>{
+      const idx = kwdDescarga.items.findIndex(it=> it.ref === ref);
+      if(idx !== -1) top.push(kwdDescarga.items.splice(idx, 1)[0]);
+    });
+    kwdDescarga.items = top.concat(kwdDescarga.items);
+  }
+}
+
+// ---------- ORDEN DE PROVEEDORES (grupos) ----------
+// KWD, NEINSA y GESTAMP van siempre arriba del todo en ese orden,
+// tanto en CARGA VACÍOS como en MATERIAL DESCARGADO. El resto de
+// proveedores se queda tal cual estaba.
+function reorderGroups(dataset){
+  const priority = ["NEINSA", "KWD", "GESTAMP"];
+  const top = [];
+  priority.forEach(name=>{
+    const idx = dataset.findIndex(g=> g.name === name);
+    if(idx !== -1) top.push(dataset.splice(idx, 1)[0]);
+  });
+  dataset.unshift(...top);
+}
+reorderGroups(DATA_CARGA);
+reorderGroups(DATA_DESCARGA);
+
+const TABS = [
+  { id:"carga",     label:"CARGA VACÍOS",       title:"Carga de muebles vacíos", data: DATA_CARGA },
+  { id:"descarga",  label:"MATERIAL DESCARGADO", title:"Material descargado",     data: DATA_DESCARGA },
+];
+let activeTabId = "carga";
+function currentTab(){ return TABS.find(t=>t.id===activeTabId); }
+const STORAGE_KEY = "registro_piezas_v1";
+
+// ---------- ESTADO ----------
+// values["tabId:code__ref"] = cantidad (número)
+// matriculas["carga"|"descarga"] = {num:"", let:""}
+// history[] = registros guardados de camiones ya finalizados
+let state = { fecha:"", turno:"", values:{}, matriculas:{}, matriculaMode:{}, activeTab:"carga", history:[], dirty:{ carga:true, descarga:true } };
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = JSON.parse(raw); }
+  }catch(e){ /* localStorage no disponible: seguimos solo en memoria */ }
+  if(!state.values) state.values = {};
+  if(!state.matriculas) state.matriculas = {};
+  if(!state.matriculaMode) state.matriculaMode = {};
+  if(!state.history) state.history = [];
+  if(!state.dirty) state.dirty = { carga:true, descarga:true };
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ /* si falla, los datos siguen disponibles en memoria durante esta sesión */ }
+}
+
+function keyFor(code, ref){ return code + "__" + ref; }
+
+// ---------- RENDER ----------
+const groupsWrapEl = document.getElementById("groupsWrap");
+const mainEls = { carga: document.getElementById("groups-carga"), descarga: document.getElementById("groups-descarga") };
+const fechaEl = document.getElementById("fecha");
+const turnoEl = document.getElementById("turno");
+const grandTotalEl = document.getElementById("grandTotal");
+
+function rowTotal(code, ref){
+  const k = keyFor(code, ref);
+  return parseInt(state.values[k]) || 0;
+}
+function groupTotal(g, tabId){
+  return g.items.reduce((s,it)=> s + rowTotal(tabId + ":" + g.code, it.ref), 0);
+}
+function grandTotal(tab){
+  tab = tab || currentTab();
+  return tab.data.reduce((s,g)=> s + groupTotal(g, tab.id), 0);
+}
+
+function matriculaLabel(tabId){
+  const m = state.matriculas[tabId] || {};
+  if(m.text) return m.text;
+  if(m.num || m.let){
+    return `R ${m.num || "____"} ${(m.let || "___").toUpperCase()}`;
+  }
+  return "(sin matrícula)";
+}
+
+const PRESET_TRAILERS = [
+  { num:"9852", let:"BBL" },
+  { num:"9853", let:"BBL" },
+  { num:"9854", let:"BBL" },
+  { num:"9806", let:"BBP" },
+  { num:"6356", let:"BBD" },
+  { num:"8044", let:"BDJ" },
+  { num:"3990", let:"BCN" },
+  { num:"3802", let:"BCS" },
+  { num:"8063", let:"BCC" },
+];
+
+const matriculaBoxEl = document.getElementById("matriculaBox");
+function renderMatricula(){
+  const tabId = activeTabId;
+  const m = state.matriculas[tabId] || {};
+  const presetIdx = PRESET_TRAILERS.findIndex(p=> p.num === m.num && p.let === m.let && !m.text);
+  const isManual = state.matriculaMode[tabId] === "manual" || (presetIdx === -1 && (m.num || m.let || m.text));
+
+  matriculaBoxEl.innerHTML = `
+    <span class="matricula-label">Matrícula del remolque</span>
+    <span class="matricula-controls">
+      <select class="matricula-select">
+        <option value="" ${(presetIdx===-1 && !isManual) ? "selected" : ""}>Selecciona…</option>
+        ${PRESET_TRAILERS.map((p,i)=>`<option value="${i}" ${presetIdx===i?"selected":""}>R ${p.num} ${p.let}</option>`).join("")}
+        <option value="manual" ${isManual ? "selected" : ""}>Otro (escribir)…</option>
+      </select>
+      <input type="text" class="matricula-manual-input" placeholder="Escribe la matrícula completa"
+        value="${m.text || ""}" style="display:${isManual?"block":"none"}">
+    </span>
+  `;
+
+  matriculaBoxEl.querySelector(".matricula-select").addEventListener("change", e=>{
+    const val = e.target.value;
+    if(val === ""){
+      state.matriculaMode[tabId] = "";
+      state.matriculas[tabId] = { num:"", let:"", text:"" };
+    }else if(val === "manual"){
+      state.matriculaMode[tabId] = "manual";
+      state.matriculas[tabId] = { num:"", let:"", text:"" };
+    }else{
+      state.matriculaMode[tabId] = "";
+      const p = PRESET_TRAILERS[parseInt(val,10)];
+      state.matriculas[tabId] = { num:p.num, let:p.let, text:"" };
+    }
+    state.dirty[tabId] = true;
+    saveState();
+    renderMatricula();
+  });
+
+  const manualInput = matriculaBoxEl.querySelector(".matricula-manual-input");
+  if(manualInput){
+    manualInput.addEventListener("input", e=>{
+      if(!state.matriculas[tabId]) state.matriculas[tabId] = {};
+      state.matriculas[tabId].text = e.target.value;
+      state.dirty[tabId] = true;
+      saveState();
+    });
+  }
+}
+
+// ---------- REGISTROS (histórico por fecha) ----------
+function saveHistoryRecord(tab){
+  const items = [];
+  tab.data.forEach(g=>{
+    g.items.forEach(it=>{
+      const qty = rowTotal(tab.id + ":" + g.code, it.ref);
+      if(qty > 0) items.push({ ref: it.ref, den: it.den, cont: it.cont, group: g.name, qty });
+    });
+  });
+  if(items.length === 0) return;
+  state.history.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    date: state.fecha,
+    tabId: tab.id,
+    tabLabel: tab.label,
+    matricula: matriculaLabel(tab.id),
+    turno: state.turno,
+    items,
+    total: items.reduce((s,it)=> s+it.qty, 0),
+    ts: Date.now()
+  });
+}
+
+function deleteHistoryRecord(id){
+  state.history = state.history.filter(r=> r.id !== id);
+  saveState();
+  renderRegistros();
+}
+
+const registrosFechaEl = document.getElementById("registrosFecha");
+const registrosListEl = document.getElementById("registrosList");
+
+function renderRegistros(){
+  const dateVal = registrosFechaEl.value;
+  const list = state.history
+    .filter(r=> r.date === dateVal)
+    .sort((a,b)=> a.ts - b.ts);
+
+  registrosListEl.innerHTML = "";
+  if(list.length === 0){
+    registrosListEl.innerHTML = `<div class="reg-empty">No hay registros guardados para esta fecha.<br>Se guardan automáticamente al pulsar 🗑 "Vaciar" tras rellenar un remolque.</div>`;
+    return;
+  }
+
+  list.forEach(rec=>{
+    const card = document.createElement("div");
+    card.className = "reg-card";
+    const hora = new Date(rec.ts).toLocaleTimeString("es-ES", {hour:"2-digit", minute:"2-digit"});
+
+    // agrupar los ítems del registro por proveedor, respetando el orden de aparición
+    const groupsOrder = [];
+    const byGroup = {};
+    rec.items.forEach(it=>{
+      const gname = it.group || "";
+      if(!byGroup[gname]){ byGroup[gname] = []; groupsOrder.push(gname); }
+      byGroup[gname].push(it);
+    });
+
+    card.innerHTML = `
+      <div class="reg-head">
+        <span class="reg-tag ${rec.tabId}">${rec.tabLabel}</span>
+        <span class="reg-plate">${rec.matricula}</span>
+        <span class="reg-time">${hora}</span>
+        <button class="reg-del" data-id="${rec.id}" title="Eliminar registro">🗑</button>
+      </div>
+      <div class="reg-body">
+        ${groupsOrder.map(gname=>`
+          ${gname ? `<div class="reg-provider">${gname}</div>` : ""}
+          ${byGroup[gname].map(it=>`
+            <div class="reg-item">
+              <span class="reg-item-name"><b>${it.ref}</b> — ${it.den}</span>
+              <span class="reg-item-qty">${it.qty}</span>
+            </div>
+          `).join("")}
+        `).join("")}
+      </div>
+      <div class="reg-total"><span>Total</span><span>${rec.total} piezas</span></div>
+    `;
+    registrosListEl.appendChild(card);
+  });
+}
+
+
+registrosFechaEl.addEventListener("change", renderRegistros);
+let armedDeleteId = null;
+let armedDeleteTimeout = null;
+registrosListEl.addEventListener("click", e=>{
+  const btn = e.target.closest(".reg-del");
+  if(!btn) return;
+  const id = btn.dataset.id;
+  if(armedDeleteId !== id){
+    armedDeleteId = id;
+    const original = btn.textContent;
+    btn.textContent = "⚠️";
+    btn.title = "Toca otra vez para eliminar";
+    clearTimeout(armedDeleteTimeout);
+    armedDeleteTimeout = setTimeout(()=>{
+      armedDeleteId = null;
+      btn.textContent = original;
+    }, 3000);
+    return;
+  }
+  clearTimeout(armedDeleteTimeout);
+  armedDeleteId = null;
+  deleteHistoryRecord(id);
+});
+
+function renderGroupsInto(container, data, tabId){
+  container.innerHTML = "";
+  data.forEach(g=>{
+    const section = document.createElement("div");
+    section.className = "group";
+
+    const head = document.createElement("div");
+    head.className = "group-head";
+    head.innerHTML = `
+      <div>
+        <div class="name">${g.name}</div>
+        <div class="code">${g.code}</div>
+      </div>
+      <button class="mic-group-btn" data-tab="${tabId}" data-code="${g.code}" data-name="${g.name}" title="Buscar por voz dentro de ${g.name}">&#127908;</button>
+      <div class="subtotal">Subtotal<br><b id="sub-${tabId}-${g.code}-${g.name}">${groupTotal(g, tabId)}</b></div>
+    `;
+    section.appendChild(head);
+
+    const wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+
+    const table = document.createElement("table");
+    table.innerHTML = `
+      <colgroup>
+        <col class="col-cont"><col class="col-den"><col class="col-cant">
+      </colgroup>
+      <thead><tr>
+        <th class="col-cont">Contenedor</th>
+        <th class="col-den">Denominación</th>
+        <th class="col-cant">Cant.</th>
+      </tr></thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+
+    g.items.forEach(it=>{
+      const k = keyFor(tabId + ":" + g.code, it.ref);
+      const tr = document.createElement("tr");
+      const v = (state.values[k] !== undefined) ? state.values[k] : "";
+      const highlightRef = tabId === "descarga" && /^\s*(2F0|3FA)/.test(it.ref);
+      const refClass = "refline" + (highlightRef ? " refline-hl" : "");
+      tr.innerHTML = `
+        <td class="cont">${it.cont}</td>
+        <td class="den">${it.den}${it.showRef === false ? "" : `<span class="${refClass}">${it.ref}</span>`}</td>
+        <td class="cant"><input type="number" inputmode="numeric" min="0" pattern="[0-9]*"
+              data-code="${tabId}:${g.code}" data-ref="${it.ref}" value="${v}"></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    wrap.appendChild(table);
+    section.appendChild(wrap);
+    container.appendChild(section);
+  });
+}
+
+function render(){
+  fechaEl.value = state.fecha || "";
+  turnoEl.value = state.turno || "";
+
+  TABS.forEach(tab=> renderGroupsInto(mainEls[tab.id], tab.data, tab.id));
+
+  groupsWrapEl.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("input", onInput);
+    inp.addEventListener("focus", ()=> inp.select());
+  });
+
+  refreshTotals();
+}
+
+// ---------- BUSCAR REFERENCIA POR VOZ (lleva directo a la fila) ----------
+const WORD_NUM = {
+  "cero":0,"uno":1,"una":1,"dos":2,"tres":3,"cuatro":4,"cinco":5,"seis":6,"siete":7,"ocho":8,"nueve":9,
+  "diez":10,"once":11,"doce":12,"trece":13,"catorce":14,"quince":15,
+  "dieciseis":16,"diecisiete":17,"dieciocho":18,"diecinueve":19,
+  "veinte":20,"veintiuno":21,"veintidos":22,"veintitres":23,"veinticuatro":24,"veinticinco":25,
+  "veintiseis":26,"veintisiete":27,"veintiocho":28,"veintinueve":29,
+  "treinta":30,"cuarenta":40,"cincuenta":50,"sesenta":60,"setenta":70,"ochenta":80,"noventa":90,
+  "cien":100,"ciento":100,"doscientos":200,"trescientos":300,"cuatrocientos":400,"quinientos":500,
+  "seiscientos":600,"setecientos":700,"ochocientos":800,"novecientos":900
+};
+function parseSpokenNumber(transcript){
+  const tokens = transcript.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(Boolean);
+  const groups = [];
+  let current = null, pendingY = false;
+  tokens.forEach(tok=>{
+    if(tok === "y"){ pendingY = true; return; }
+    let val = null;
+    if(/^\d+$/.test(tok)) val = parseInt(tok,10);
+    else if(tok in WORD_NUM) val = WORD_NUM[tok];
+    if(val !== null){
+      const canAdd = current !== null && (pendingY || (current>=100 && current%100===0));
+      if(canAdd) current += val;
+      else{ if(current!==null) groups.push(String(current)); current = val; }
+      pendingY = false;
+      return;
+    }
+    if(/^[a-e]$/.test(tok)){
+      if(current!==null){ groups.push(String(current)); current=null; }
+      groups.push(tok.toUpperCase());
+      pendingY = false;
+      return;
+    }
+    if(current!==null){ groups.push(String(current)); current=null; }
+    pendingY = false;
+  });
+  if(current!==null) groups.push(String(current));
+  return groups.join("");
+}
+function cleanRefVoice(s){ return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function refVariantsVoice(ref){
+  const m = String(ref||"").match(/^(.*?)(\d+)\s*\/\s*(\d+)\s*$/);
+  if(!m) return [cleanRefVoice(ref)];
+  const prefix = m[1], num1 = m[2], suf2 = m[3];
+  const num2 = num1.slice(0, Math.max(0, num1.length - suf2.length)) + suf2;
+  return [cleanRefVoice(prefix + num1), cleanRefVoice(prefix + num2)];
+}
+
+const SpeechRecognitionCtorApp = window.SpeechRecognition || window.webkitSpeechRecognition;
+let searchRecognition = null;
+let activeMicBtn = null;
+
+function findGroupByCode(tabId, code, gname){
+  const tab = TABS.find(t=> t.id === tabId);
+  if(!tab) return null;
+  return tab.data.find(g=> String(g.code) === String(code) && g.name === gname);
+}
+
+if(SpeechRecognitionCtorApp){
+  searchRecognition = new SpeechRecognitionCtorApp();
+  searchRecognition.lang = "es-ES";
+  searchRecognition.continuous = false;
+  searchRecognition.interimResults = false;
+
+  searchRecognition.addEventListener("start", ()=>{
+    if(activeMicBtn) activeMicBtn.classList.add("listening");
+    showToast("Escuchando... di la referencia");
+  });
+  searchRecognition.addEventListener("end", ()=>{
+    if(activeMicBtn) activeMicBtn.classList.remove("listening");
+  });
+  searchRecognition.addEventListener("error", ()=>{
+    if(activeMicBtn) activeMicBtn.classList.remove("listening");
+    showToast("El micrófono no funciona así (archivo local) · usa el de tu teclado, o sube la app a un enlace https");
+  });
+  searchRecognition.addEventListener("result", (e)=>{
+    const transcript = e.results[0][0].transcript;
+    const parsed = cleanRefVoice(parseSpokenNumber(transcript));
+    if(!parsed || !activeMicBtn){ showToast(`No he entendido "${transcript}"`); return; }
+
+    const tabId = activeMicBtn.dataset.tab;
+    const code = activeMicBtn.dataset.code;
+    const gname = activeMicBtn.dataset.name;
+    const g = findGroupByCode(tabId, code, gname);
+    if(!g){ showToast("No se ha podido identificar el proveedor"); return; }
+
+    let matches = g.items.filter(it=> refVariantsVoice(it.ref).includes(parsed));
+    if(matches.length === 0 && parsed.length >= 3){
+      matches = g.items.filter(it=> refVariantsVoice(it.ref).some(v=> v.endsWith(parsed)));
+    }
+    if(matches.length === 0){
+      showToast(`No encuentro "${transcript}" dentro de ${gname} · puede que esté en otro proveedor`);
+      return;
+    }
+    const it = matches[0];
+    const selector = `input[data-code="${tabId}:${code}"][data-ref="${CSS.escape(it.ref)}"]`;
+    const input = mainEls[tabId].querySelector(selector);
+    if(input){
+      try{ input.scrollIntoView({ behavior:"smooth", block:"center" }); }catch(err){}
+      input.focus();
+      input.select();
+    }
+    showToast(matches.length > 1
+      ? `Varias coincidencias en ${gname} · llevado a "${it.ref}"`
+      : `Llevado a "${it.ref}" (${gname})`);
+  });
+
+  groupsWrapEl.addEventListener("click", e=>{
+    const btn = e.target.closest(".mic-group-btn");
+    if(!btn) return;
+    activeMicBtn = btn;
+    try{ searchRecognition.start(); }catch(err){}
+  });
+}else{
+  groupsWrapEl.addEventListener("click", e=>{
+    const btn = e.target.closest(".mic-group-btn");
+    if(!btn) return;
+    showToast("El micrófono no está disponible aquí: usa el de tu teclado sobre la casilla de cantidad");
+  });
+}
+
+function switchTab(id){
+  activeTabId = id;
+  state.activeTab = id;
+  saveState();
+  document.querySelectorAll(".tab-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.tab === id);
+  });
+
+  const registrosViewEl = document.getElementById("registrosView");
+  const footerEl = document.getElementById("footer");
+
+  if(id === "registros"){
+    matriculaBoxEl.style.display = "none";
+    groupsWrapEl.style.display = "none";
+    footerEl.style.display = "none";
+    registrosViewEl.style.display = "block";
+    if(!registrosFechaEl.value) registrosFechaEl.value = state.fecha || "";
+    renderRegistros();
+    return;
+  }
+
+  matriculaBoxEl.style.display = "";
+  groupsWrapEl.style.display = "";
+  footerEl.style.display = "";
+  registrosViewEl.style.display = "none";
+
+  Object.keys(mainEls).forEach(k=>{
+    mainEls[k].style.display = (k === id) ? "" : "none";
+  });
+  renderMatricula();
+  refreshTotals();
+}
+
+document.querySelectorAll(".tab-btn").forEach(b=>{
+  b.addEventListener("click", ()=> switchTab(b.dataset.tab));
+});
+
+function onInput(e){
+  const { code, ref } = e.target.dataset;
+  const k = keyFor(code, ref);
+  const val = e.target.value.replace(/[^0-9]/g,"");
+  e.target.value = val;
+  if(val === ""){ delete state.values[k]; }
+  else{ state.values[k] = parseInt(val,10); }
+  const tabId = code.split(":")[0];
+  state.dirty[tabId] = true;
+  saveState();
+  refreshTotals();
+}
+
+function refreshTotals(){
+  TABS.forEach(tab=>{
+    tab.data.forEach(g=>{
+      const subEl = document.getElementById(`sub-${tab.id}-${g.code}-${g.name}`);
+      if(subEl) subEl.textContent = groupTotal(g, tab.id);
+    });
+  });
+  grandTotalEl.textContent = grandTotal();
+}
+
+fechaEl.addEventListener("change", ()=>{ state.fecha = fechaEl.value; saveState(); });
+turnoEl.addEventListener("input", ()=>{ state.turno = turnoEl.value; saveState(); });
+
+// ---------- ACCIONES ----------
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._h);
+  showToast._h = setTimeout(()=> t.classList.remove("show"), 2200);
+}
+
+function buildSegments(tab){
+  tab = tab || currentTab();
+  const fecha = state.fecha ? new Date(state.fecha+"T00:00:00").toLocaleDateString("es-ES") : "(sin fecha)";
+  const turno = state.turno ? state.turno : "(sin indicar)";
+  let segs = [];
+  segs.push({type:"title", text: tab.title});
+  segs.push({type:"meta", text:`${fecha}   ·   ${turno}`});
+  segs.push({type:"truck", text: matriculaLabel(tab.id)});
+  segs.push({type:"spacer"});
+
+  const groupsWithData = tab.data.map(g=>{
+    const items = g.items.filter(it=>{
+      const k = keyFor(tab.id + ":" + g.code, it.ref);
+      return (parseInt(state.values[k]) || 0) > 0;
+    });
+    return { g, items };
+  }).filter(x=> x.items.length > 0);
+
+  groupsWithData.forEach(({g, items})=>{
+    segs.push({type:"group", text: `${g.name} (${g.code})`});
+    items.forEach(it=>{
+      const k = keyFor(tab.id + ":" + g.code, it.ref);
+      const label = (tab.id === "carga" && it.cont) ? String(it.cont) : it.ref;
+      segs.push({type:"item", ref: label, den: it.den, qty: state.values[k]});
+    });
+  });
+
+  segs.push({type:"spacer"});
+  segs.push({type:"total", text:`TOTAL GENERAL: ${grandTotal(tab)} piezas`});
+  return segs;
+}
+
+function segmentsToText(segs){
+  return segs.map(s=>{
+    switch(s.type){
+      case "title": return `📋 *${s.text}*`;
+      case "meta": return `📅 ${s.text}`;
+      case "truck": return `🚚 *${s.text}*`;
+      case "group": return `🔹 ${s.text}`;
+      case "item": return `• ${s.ref} — ${s.den}: *${s.qty}*`;
+      case "subtotal": return s.text;
+      case "total": return `✅ *${s.text}*`;
+      case "spacer": return "";
+    }
+  }).join("\n");
+}
+
+function buildMessage(tab){
+  return segmentsToText(buildSegments(tab));
+}
+
+// ---------- IMAGEN ----------
+function renderReportCanvas(tab){
+  const segs = buildSegments(tab);
+  const W = 1000, PAD = 44;
+  const COL = { bg:"#12151a", panel:"#1c2129", line:"#323a46",
+    text:"#eef1f5", dim:"#98a3b3", ref:"#4fb3ff", qty:"#ff5a5a",
+    amber:"#e8a23d", green:"#4caf7d" };
+  const H = { title:60, meta:36, spacer:20, truck:52, group:42, item:38, subtotal:44, total:64 };
+
+  // 1) medir altura total
+  let totalH = PAD*2;
+  segs.forEach(s=> totalH += H[s.type]);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = totalH;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = COL.bg; ctx.fillRect(0,0,W,totalH);
+
+  let y = PAD;
+  segs.forEach(s=>{
+    const cy = y + H[s.type]/2;
+    if(s.type === "title"){
+      ctx.fillStyle = COL.text; ctx.font = "700 40px system-ui,sans-serif";
+      ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      ctx.fillText("📋 " + s.text, PAD, cy);
+    } else if(s.type === "meta"){
+      ctx.fillStyle = COL.dim; ctx.font = "500 24px system-ui,sans-serif";
+      ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      ctx.fillText(s.text, PAD, cy);
+    } else if(s.type === "truck"){
+      ctx.fillStyle = COL.amber; ctx.font = "700 30px system-ui,sans-serif";
+      ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      ctx.fillText("🚚 " + s.text, PAD, cy);
+    } else if(s.type === "group"){
+      ctx.fillStyle = COL.text; ctx.font = "700 25px system-ui,sans-serif";
+      ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      ctx.fillText("🔹 " + s.text, PAD + 20, cy);
+    } else if(s.type === "item"){
+      ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      let x = PAD + 40;
+      ctx.fillStyle = COL.dim; ctx.font = "24px system-ui,sans-serif";
+      ctx.fillText("•", x, cy); x += 20;
+      ctx.fillStyle = COL.ref; ctx.font = "700 23px ui-monospace,Menlo,monospace";
+      ctx.fillText(s.ref, x, cy); x += ctx.measureText(s.ref).width + 14;
+      ctx.fillStyle = COL.text; ctx.font = "23px system-ui,sans-serif";
+      ctx.fillText("— " + s.den + ":", x, cy);
+      x += ctx.measureText("— " + s.den + ":").width + 14;
+      ctx.fillStyle = COL.qty; ctx.font = "800 26px system-ui,sans-serif";
+      ctx.fillText(String(s.qty), x, cy);
+    } else if(s.type === "subtotal"){
+      ctx.fillStyle = COL.green; ctx.font = "700 26px system-ui,sans-serif";
+      ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      ctx.fillText(s.text, PAD + 20, cy);
+    } else if(s.type === "total"){
+      ctx.fillStyle = COL.panel; 
+      ctx.fillRect(PAD-16, y+4, W-(PAD-16)*2, H.total-8);
+      ctx.strokeStyle = COL.green; ctx.lineWidth = 2;
+      ctx.strokeRect(PAD-16, y+4, W-(PAD-16)*2, H.total-8);
+      ctx.fillStyle = COL.green; ctx.font = "800 32px system-ui,sans-serif";
+      ctx.textBaseline = "middle"; ctx.textAlign = "center";
+      ctx.fillText("✅ " + s.text, W/2, cy);
+    }
+    y += H[s.type];
+  });
+
+  return canvas;
+}
+
+async function shareReportImage(){
+  const tab = currentTab();
+  if(grandTotal(tab) === 0){
+    showToast("Todavía no has introducido ninguna cantidad");
+    return;
+  }
+  if(state.dirty[tab.id] !== false){
+    saveHistoryRecord(tab);
+    state.dirty[tab.id] = false;
+    saveState();
+  }
+  const canvas = renderReportCanvas(tab);
+  canvas.toBlob(async (blob)=>{
+    if(!blob){ showToast("No se pudo generar la imagen"); return; }
+    const file = new File([blob], tab.id + ".png", { type: "image/png" });
+    try{
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title: tab.title });
+        return;
+      }
+    }catch(e){ /* el usuario canceló el share o no está soportado: seguimos con la descarga */ }
+    // Fallback: descargar la imagen para adjuntarla manualmente en WhatsApp
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = tab.id + ".png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
+    showToast("Imagen descargada · adjúntala en WhatsApp");
+  }, "image/png");
+}
+
+document.getElementById("shareBtn").addEventListener("click", shareReportImage);
+
+
+document.getElementById("textBtn").addEventListener("click", ()=>{
+  const tab = currentTab();
+  if(grandTotal(tab) === 0){
+    showToast("Todavía no has introducido ninguna cantidad");
+    return;
+  }
+  const text = buildMessage(tab);
+  const url = "https://wa.me/?text=" + encodeURIComponent(text);
+  window.open(url, "_blank");
+});
+
+const clearBtnEl = document.getElementById("clearBtn");
+let clearArmed = false;
+let clearArmedTimeout = null;
+clearBtnEl.addEventListener("click", ()=>{
+  const tab = currentTab();
+  if(!clearArmed){
+    clearArmed = true;
+    clearBtnEl.textContent = "⚠️";
+    clearBtnEl.title = "Toca otra vez para vaciar";
+    clearArmedTimeout = setTimeout(()=>{
+      clearArmed = false;
+      clearBtnEl.textContent = "🗑";
+      clearBtnEl.title = "Vaciar todo";
+    }, 3000);
+    return;
+  }
+  clearTimeout(clearArmedTimeout);
+  clearArmed = false;
+  clearBtnEl.textContent = "🗑";
+  clearBtnEl.title = "Vaciar todo";
+
+  if(state.dirty[tab.id] !== false && grandTotal(tab) > 0){
+    saveHistoryRecord(tab);
+  }
+  tab.data.forEach(g=>{
+    g.items.forEach(it=>{
+      delete state.values[keyFor(tab.id + ":" + g.code, it.ref)];
+    });
+  });
+  state.matriculas[tab.id] = { num:"", let:"", text:"" };
+  state.matriculaMode[tab.id] = "";
+  state.dirty[tab.id] = true;
+  saveState();
+  renderMatricula();
+  render();
+  showToast("Formulario vaciado, listo para el siguiente remolque");
+});
+
+// ---------- INIT ----------
+loadState();
+if(!state.fecha){
+  const today = new Date();
+  state.fecha = today.toISOString().slice(0,10);
+}
+activeTabId = (state.activeTab && TABS.some(t=>t.id===state.activeTab)) ? state.activeTab : "carga";
+render();
+switchTab(activeTabId);
+</script>
+</body>
+</html>
